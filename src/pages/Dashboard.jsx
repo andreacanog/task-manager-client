@@ -47,44 +47,71 @@ function Dashboard() {
     navigate("/login");
   };
 
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error loading boards!</p>;
+  if (loading) return (
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <p className="text-gray-500">Loading boards...</p>
+    </div>
+  );
+
+  if (error) return (
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <p className="text-red-500">Error loading boards!</p>
+    </div>
+  );
 
   return (
-    <div style={{ padding: "20px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h1>My Boards</h1>
-        <button onClick={handleLogout}>Logout</button>
-      </div>
+    <div className="min-h-screen bg-gray-100">
+      {/* Navbar */}
+      <nav className="bg-blue-600 px-6 py-4 flex justify-between items-center shadow">
+        <h1 className="text-white text-xl font-bold">TaskManager</h1>
+        <button
+          onClick={handleLogout}
+          className="text-white text-sm hover:underline"
+        >
+          Logout
+        </button>
+      </nav>
 
-      <form onSubmit={handleCreateBoard} style={{ marginBottom: "20px" }}>
-        <input
-          type="text"
-          placeholder="New board title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          style={{ padding: "8px", marginRight: "10px" }}
-        />
-        <button type="submit">Create Board</button>
-      </form>
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6">My Boards</h2>
 
-      <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
-        {data.boards.map((board) => (
-          <div
-            key={board.id}
-            onClick={() => navigate(`/board/${board.id}`)}
-            style={{
-              padding: "20px",
-              background: "#0079bf",
-              color: "white",
-              borderRadius: "8px",
-              cursor: "pointer",
-              minWidth: "200px",
-            }}
+        {/* Create board form */}
+        <form onSubmit={handleCreateBoard} className="flex gap-3 mb-8">
+          <input
+            type="text"
+            placeholder="New board title..."
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+          />
+          <button
+            type="submit"
+            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded transition"
           >
-            <h3>{board.title}</h3>
+            + Create Board
+          </button>
+        </form>
+
+        {/* Empty state */}
+        {data.boards.length === 0 && (
+          <div className="text-center py-16">
+            <p className="text-gray-400 text-lg mb-2">No boards yet!</p>
+            <p className="text-gray-400 text-sm">Create your first board to get started.</p>
           </div>
-        ))}
+        )}
+
+        {/* Boards grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {data.boards.map((board) => (
+            <div
+              key={board.id}
+              onClick={() => navigate(`/board/${board.id}`)}
+              className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg p-5 cursor-pointer transition shadow"
+            >
+              <h3 className="font-semibold text-lg">{board.title}</h3>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
