@@ -117,87 +117,108 @@ function Board() {
     await deleteTask({ variables: { id: taskId } });
   };
 
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error loading board!</p>;
+  if (loading) return (
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <p className="text-gray-500">Loading board...</p>
+    </div>
+  );
+
+  if (error) return (
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <p className="text-red-500">Error loading board!</p>
+    </div>
+  );
 
   return (
-    <div style={{ padding: "20px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: "20px" }}>
-        <button onClick={() => navigate("/dashboard")}>← Back</button>
-        <h1>{data.board.title}</h1>
-      </div>
+    <div className="min-h-screen bg-gray-100">
+      {/* Navbar */}
+      <nav className="bg-blue-600 px-6 py-4 flex items-center gap-4 shadow">
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="text-white text-sm hover:underline"
+        >
+          ← Back
+        </button>
+        <h1 className="text-white text-xl font-bold">{data.board.title}</h1>
+      </nav>
 
-      <div style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
-        {data.board.lists.map((list) => (
-          <div
-            key={list.id}
-            style={{
-              background: "#ebecf0",
-              borderRadius: "8px",
-              padding: "12px",
-              minWidth: "250px",
-            }}
-          >
-            <h3 style={{ marginBottom: "12px" }}>{list.title}</h3>
+      {/* Board content */}
+      <div className="p-6 overflow-x-auto">
+        <div className="flex gap-4 items-start">
+          {data.board.lists.map((list) => (
+            <div
+              key={list.id}
+              className="bg-gray-200 rounded-lg p-3 w-64 flex-shrink-0"
+            >
+              <h3 className="font-semibold text-gray-700 mb-3">{list.title}</h3>
 
-            {list.tasks.map((task) => (
-              <div
-                key={task.id}
-                style={{
-                  background: "white",
-                  padding: "8px",
-                  borderRadius: "4px",
-                  marginBottom: "8px",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <span
-                  onClick={() => handleToggleTask(task)}
-                  style={{
-                    cursor: "pointer",
-                    textDecoration: task.completed ? "line-through" : "none",
-                    color: task.completed ? "#aaa" : "black",
-                  }}
-                >
-                  {task.title}
-                </span>
-                <button
-                  onClick={() => handleDeleteTask(task.id)}
-                  style={{ background: "none", border: "none", cursor: "pointer", color: "red" }}
-                >
-                  ✕
-                </button>
+              {/* Tasks */}
+              <div className="space-y-2 mb-3">
+                {list.tasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className="bg-white rounded p-2 flex justify-between items-center shadow-sm"
+                  >
+                    <span
+                      onClick={() => handleToggleTask(task)}
+                      className={`text-sm cursor-pointer flex-1 ${
+                        task.completed
+                          ? "line-through text-gray-400"
+                          : "text-gray-700"
+                      }`}
+                    >
+                      {task.title}
+                    </span>
+                    <button
+                      onClick={() => handleDeleteTask(task.id)}
+                      className="text-gray-400 hover:text-red-500 ml-2 text-xs transition"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
 
-            <form onSubmit={(e) => handleCreateTask(e, list.id)}>
+              {/* Add task form */}
+              <form onSubmit={(e) => handleCreateTask(e, list.id)}>
+                <input
+                  type="text"
+                  placeholder="Add a task..."
+                  value={newTaskTitles[list.id] || ""}
+                  onChange={(e) =>
+                    setNewTaskTitles({ ...newTaskTitles, [list.id]: e.target.value })
+                  }
+                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm mb-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+                <button
+                  type="submit"
+                  className="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm py-1 rounded transition"
+                >
+                  + Add Task
+                </button>
+              </form>
+            </div>
+          ))}
+
+          {/* Add list form */}
+          <div className="bg-gray-200 rounded-lg p-3 w-64 flex-shrink-0">
+            <h3 className="font-semibold text-gray-700 mb-3">Add a list</h3>
+            <form onSubmit={handleCreateList}>
               <input
                 type="text"
-                placeholder="Add a task..."
-                value={newTaskTitles[list.id] || ""}
-                onChange={(e) =>
-                  setNewTaskTitles({ ...newTaskTitles, [list.id]: e.target.value })
-                }
-                style={{ width: "100%", padding: "6px", marginBottom: "6px" }}
+                placeholder="List title..."
+                value={newListTitle}
+                onChange={(e) => setNewListTitle(e.target.value)}
+                className="w-full border border-gray-300 rounded px-2 py-1 text-sm mb-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
-              <button type="submit" style={{ width: "100%" }}>Add Task</button>
+              <button
+                type="submit"
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm py-1 rounded transition"
+              >
+                + Add List
+              </button>
             </form>
           </div>
-        ))}
-
-        <div style={{ minWidth: "250px" }}>
-          <form onSubmit={handleCreateList}>
-            <input
-              type="text"
-              placeholder="New list title..."
-              value={newListTitle}
-              onChange={(e) => setNewListTitle(e.target.value)}
-              style={{ width: "100%", padding: "6px", marginBottom: "6px" }}
-            />
-            <button type="submit" style={{ width: "100%" }}>Add List</button>
-          </form>
         </div>
       </div>
     </div>
