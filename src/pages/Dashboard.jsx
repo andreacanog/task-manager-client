@@ -23,12 +23,28 @@ const CREATE_BOARD = gql`
   }
 `;
 
+const DELETE_BOARD = gql`
+    mutation DeleteBoard($id: ID!) {
+        deleteBoard(input: { id: $id }) {
+          success
+          errors
+        }
+    }
+`;
+
+
 function Dashboard() {
   const [title, setTitle] = useState("");
   const { data, loading, error } = useQuery(GET_BOARDS);
+
   const [createBoard] = useMutation(CREATE_BOARD, {
     refetchQueries: [{ query: GET_BOARDS }],
   });
+
+  const [deleteBoard] = useMutation(DELETE_BOARD, {
+    refetchQueries: [{ query: GET_BOARDS }],
+  });
+
   const navigate = useNavigate();
 
   const handleCreateBoard = async (e) => {
@@ -41,6 +57,11 @@ function Dashboard() {
       alert(data.createBoard.errors[0]);
     }
   };
+
+  const handleDeleteBoard = async (e, boardId) => {
+    e.stopPropagation() // prevents navigating to the board
+    await deleteBoard({ variables: { id: boardId } })
+  }
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -109,6 +130,12 @@ function Dashboard() {
               className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg p-5 cursor-pointer transition shadow"
             >
               <h3 className="font-semibold text-lg">{board.title}</h3>
+              <button
+                  onClick={(e) => handleDeleteBoard(e, board.id)}
+                  className="text-gray-400 hover:text-red-500 ml-2 text-xs transition"
+              >
+                  ✕
+              </button>
             </div>
           ))}
         </div>
