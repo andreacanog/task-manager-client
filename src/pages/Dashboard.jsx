@@ -23,6 +23,18 @@ const CREATE_BOARD = gql`
   }
 `;
 
+const UPDATE_BOARD = gql`
+    mutation UpdateBoard($id: ID!, $title: String!) {
+        updateBoard(input: { id: $id, title: $title }) {
+            board {
+                id
+                title
+            }
+            errors
+        }
+    }
+`;
+
 const DELETE_BOARD = gql`
     mutation DeleteBoard($id: ID!) {
         deleteBoard(input: { id: $id }) {
@@ -35,9 +47,15 @@ const DELETE_BOARD = gql`
 
 function Dashboard() {
   const [title, setTitle] = useState("");
+  const [editingBoardId, setEditingBoardId] = useState(null)
+  const [editingTitle, setEditingTitle] = useState("")
   const { data, loading, error } = useQuery(GET_BOARDS);
 
   const [createBoard] = useMutation(CREATE_BOARD, {
+    refetchQueries: [{ query: GET_BOARDS }],
+  });
+
+  const [updateBoard] = useMutation(UPDATE_BOARD, {
     refetchQueries: [{ query: GET_BOARDS }],
   });
 
@@ -57,6 +75,18 @@ function Dashboard() {
       alert(data.createBoard.errors[0]);
     }
   };
+
+  const handleEditClick = async (e, board) => {
+    e.stopPropagation()
+    setEditingBoardId(board.id)
+    setEditingTitle(board.title)
+  }
+
+  const handleUpdateBoard = async (e, boardId) => {
+    await updateBoard({ variables: { id: boardId, title: editingTitle}})
+    setEditingBoardId(null)
+    setEditingTitle("")
+  }
 
   const handleDeleteBoard = async (e, boardId) => {
     e.stopPropagation() // prevents navigating to the board
@@ -129,12 +159,28 @@ function Dashboard() {
               onClick={() => navigate(`/board/${board.id}`)}
               className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg p-5 cursor-pointer transition shadow"
             >
-              <h3 className="font-semibold text-lg">{board.title}</h3>
+              {editingBoardId === board.id ? (
+                <input
+                  value={editingTitle}
+                  onChange={(e) => setEditingTitle(e.target.value)}
+                  onBlur={(e) => handleUpdateBoard(e, board.id)}
+                  onKeyDown={(e) => e.key === "Enter" && handleUpdateBoard(e, board.id)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : (
+                <h3 className="font-semibold text-lg">{board.title}</h3>
+              )}
               <button
                   onClick={(e) => handleDeleteBoard(e, board.id)}
                   className="text-gray-400 hover:text-red-500 ml-2 text-xs transition"
               >
                   ✕
+              </button>
+              <button
+                  onClick={(e) => handleEditClick(e, board)}
+                  className="text-gray-400 hover:text-red-500 ml-2 text-xs transition"
+              >
+                  ✏️
               </button>
             </div>
           ))}
