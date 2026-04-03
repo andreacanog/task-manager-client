@@ -16,11 +16,12 @@ const CREATE_TASK = gql`
 `;
 
 const UPDATE_TASK = gql`
-    mutation UpdateTask($id: ID!, $completed: Boolean) {
-        updateTask(input: { id: $id, completed: $completed }) {
+    mutation UpdateTask($id: ID!, $completed: Boolean, $title: String) {
+        updateTask(input: { id: $id, completed: $completed, title: $title }) {
             task {
                 id
                 completed
+                title
             }
             errors
         }
@@ -61,8 +62,8 @@ const DELETE_LIST = gql`
 
 function List({ list, refetchBoard }) {
     const [newTaskTitle, setNewTaskTitle] = useState("");
-    const [isEditing, setIsEditing] = useState(false)
-    const [editingTitle, setEditingTitle] = useState("")
+    const [isEditing, setIsEditing] = useState(false);
+    const [editingTitle, setEditingTitle] = useState("");
 
     const [createTask] = useMutation(CREATE_TASK, {
         refetchQueries: refetchBoard,
@@ -101,6 +102,10 @@ function List({ list, refetchBoard }) {
         await updateList({ variables: { id: list.id, title: editingTitle}})
         setIsEditing(false)
         setEditingTitle("")
+    }
+
+    const handleUpdateTask = async (taskId, newTaskTitle) => {
+        await updateTask({ variables: { id: taskId, title: newTaskTitle}})
     }
 
     const handleToggleTask = async (task) => {
@@ -151,6 +156,7 @@ function List({ list, refetchBoard }) {
                         task={task}
                         onToggle={handleToggleTask}
                         onDelete={handleDeleteTask}
+                        onUpdate={handleUpdateTask}
                     />
                 ))}
             </div>
