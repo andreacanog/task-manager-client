@@ -80,6 +80,13 @@ function Board() {
                 <h1 className="text-white text-xl font-bold">{data.board.title}</h1>
             </nav>
 
+            {data.board.lists.length === 0 && (
+                <div className="text-center py-16">
+                    <p className="text-gray-400 text-lg mb-2">No Lists yet!</p>
+                    <p className="text-gray-400 text-sm">Create your first list to get started.</p>
+                </div>
+            )}
+
             {/* Board content */}
             <div className="p-6 overflow-x-auto">
                 <div className="flex gap-4 items-start">
