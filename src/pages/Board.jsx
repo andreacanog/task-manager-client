@@ -2,6 +2,7 @@ import { useQuery, useMutation, gql } from "@apollo/client";
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import List from "../components/List";
+import Spinner from "../components/Spinner";
 
 const GET_BOARD = gql`
     query GetBoard($id: ID!) {
@@ -55,11 +56,7 @@ function Board() {
         setNewListTitle("");
     };
 
-    if (loading) return (
-        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-            <p className="text-gray-500">Loading board...</p>
-        </div>
-    );
+    if (loading) return <Spinner/>
 
     if (error) return (
         <div className="min-h-screen bg-gray-100 flex items-center justify-center">

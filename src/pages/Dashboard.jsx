@@ -1,6 +1,7 @@
 import { useQuery, useMutation, gql } from "@apollo/client";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Spinner from "../components/Spinner";
 
 const GET_BOARDS = gql`
   query {
@@ -98,11 +99,7 @@ function Dashboard() {
     navigate("/login");
   };
 
-  if (loading) return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <p className="text-gray-500">Loading boards...</p>
-    </div>
-  );
+  if (loading || true) return <Spinner/>
 
   if (error) return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
