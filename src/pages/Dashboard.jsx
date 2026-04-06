@@ -91,6 +91,8 @@ function Dashboard() {
 
   const handleDeleteBoard = async (e, boardId) => {
     e.stopPropagation() // prevents navigating to the board
+    const confirmed = window.confirm("Are you sure you want to delete this board?")
+    if (!confirmed) return
     await deleteBoard({ variables: { id: boardId } })
   }
 
@@ -99,8 +101,8 @@ function Dashboard() {
     navigate("/login");
   };
 
-  if (loading || true) return <Spinner/>
-
+  if (loading) return <Spinner/>
+ 
   if (error) return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <p className="text-red-500">Error loading boards!</p>

@@ -113,10 +113,14 @@ function List({ list, refetchBoard }) {
     };
 
     const handleDeleteTask = async (taskId) => {
+        const confirmed = window.confirm("Are you sure you want to delete this task?")
+        if (!confirmed) return
         await deleteTask({ variables: { id: taskId } });
     };
 
     const handleDeleteList = async (listId) => {
+        const confirmed = window.confirm("Are you sure you want to delete this list?")
+        if (!confirmed) return
         await deleteList({ variables: { id: listId } })
     }
 
