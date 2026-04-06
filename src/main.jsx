@@ -1,4 +1,5 @@
 import { StrictMode } from "react";
+import { onError } from "@apollo/client/link/error";
 import { createRoot } from "react-dom/client";
 import {
   ApolloClient,
@@ -24,8 +25,21 @@ const authLink = new ApolloLink((operation, forward) => {
   return forward(operation);
 });
 
+const errorLink = onError(({ graphQLErrors }) => {
+  console.log("errorLink fired", graphQLErrors)
+  if (graphQLErrors) {
+    for (const err of graphQLErrors) {
+        console.log("error message:", err.message)
+      if (err.message === "You must be logged in") {
+        localStorage.removeItem("token")
+        window.location.href = "/login"
+      }
+    }
+  }
+})
+
 const client = new ApolloClient({
-  link: authLink.concat(httpLink),
+  link: errorLink.concat(authLink).concat(httpLink),
   cache: new InMemoryCache(),
 });
 
