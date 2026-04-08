@@ -16,12 +16,13 @@ const CREATE_TASK = gql`
 `;
 
 const UPDATE_TASK = gql`
-    mutation UpdateTask($id: ID!, $completed: Boolean, $title: String) {
-        updateTask(input: { id: $id, completed: $completed, title: $title }) {
+    mutation UpdateTask($id: ID!, $completed: Boolean, $title: String, $description: String) {
+        updateTask(input: { id: $id, completed: $completed, title: $title, description: $description }) {
             task {
                 id
                 completed
                 title
+                description
             }
             errors
         }
@@ -104,8 +105,8 @@ function List({ list, refetchBoard }) {
         setEditingTitle("")
     }
 
-    const handleUpdateTask = async (taskId, newTaskTitle) => {
-        await updateTask({ variables: { id: taskId, title: newTaskTitle}})
+    const handleUpdateTask = async (taskId, newTaskTitle, newDescription) => {
+        await updateTask({ variables: { id: taskId, title: newTaskTitle, description: newDescription}})
     }
 
     const handleToggleTask = async (task) => {
