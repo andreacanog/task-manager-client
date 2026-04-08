@@ -16,6 +16,7 @@ const GET_BOARD = gql`
                 tasks {
                     id
                     title
+                    description
                     completed
                 }
             }
