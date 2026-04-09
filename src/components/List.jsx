@@ -1,6 +1,7 @@
 import { useMutation, gql } from "@apollo/client";
 import { useState } from "react";
 import Task from "./Task";
+import { Pencil, Trash2 } from "lucide-react";
 
 const CREATE_TASK = gql`
     mutation CreateTask($title: String!, $listId: ID!) {
@@ -16,13 +17,14 @@ const CREATE_TASK = gql`
 `;
 
 const UPDATE_TASK = gql`
-    mutation UpdateTask($id: ID!, $completed: Boolean, $title: String, $description: String) {
-        updateTask(input: { id: $id, completed: $completed, title: $title, description: $description }) {
+    mutation UpdateTask($id: ID!, $completed: Boolean, $title: String, $description: String, $dueDate: String) {
+        updateTask(input: { id: $id, completed: $completed, title: $title, description: $description, dueDate: $dueDate }) {
             task {
                 id
                 completed
                 title
                 description
+                dueDate
             }
             errors
         }
@@ -105,8 +107,8 @@ function List({ list, refetchBoard }) {
         setEditingTitle("")
     }
 
-    const handleUpdateTask = async (taskId, newTaskTitle, newDescription) => {
-        await updateTask({ variables: { id: taskId, title: newTaskTitle, description: newDescription}})
+    const handleUpdateTask = async (taskId, newTaskTitle, newDescription, newDueDate) => {
+        await updateTask({ variables: { id: taskId, title: newTaskTitle, description: newDescription, dueDate: newDueDate}})
     }
 
     const handleToggleTask = async (task) => {
@@ -127,29 +129,33 @@ function List({ list, refetchBoard }) {
 
     return (
         <div className="bg-gray-200 rounded-lg p-3 w-64 flex-shrink-0">
-            <div className="bg-gray-200 rounded-lg p-3 w-64 flex-shrink-0">
+            {/* List header */}
+            <div className="flex items-center justify-between mb-3">
                 {isEditing ? (
                     <input
                         value={editingTitle}
                         onChange={(e) => setEditingTitle(e.target.value)}
-                        onBlur={(e) => handleUpdateList(e)}
+                        onBlur={handleUpdateList}
                         onKeyDown={(e) => {
                             if (e.key === "Enter") {
                                 e.preventDefault()
                                 handleUpdateList(e)
-                            }    
+                            }
                         }}
                         onClick={(e) => e.stopPropagation()}
                         className="font-semibold text-gray-700 rounded px-1 w-full"
                         autoFocus
                     />
                 ) : (
-                        <h3 className="font-semibold text-gray-700 mb-3">{list.title}</h3>
+                    <h3 className="font-semibold text-gray-700">{list.title}</h3>
                 )}
-
                 <div className="flex gap-1 ml-2">
-                    <button onClick={(e) => handleEditClick(e)} className="text-gray-400 hover:text-blue-500 text-xs transition">✏️</button>
-                    <button onClick={() => handleDeleteList(list.id)} className="text-gray-400 hover:text-red-500 text-xs transition">✕</button>
+                    <button onClick={(e) => handleEditClick(e)} className="text-gray-400 hover:text-blue-500 transition">
+                        <Pencil size={14} />
+                    </button>
+                    <button onClick={() => handleDeleteList(list.id)} className="text-gray-400 hover:text-red-500 transition">
+                        <Trash2 size={14} />
+                    </button>
                 </div>
             </div>
 

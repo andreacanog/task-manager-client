@@ -18,6 +18,7 @@ const GET_BOARD = gql`
                     title
                     description
                     completed
+                    dueDate
                 }
             }
         }

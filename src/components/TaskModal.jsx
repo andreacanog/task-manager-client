@@ -3,9 +3,10 @@ import { useState } from "react";
 function TaskModal({ task, onClose, onUpdate, onDelete }) {
     const [editingTitle, setEditingTitle] = useState(task.title);
     const [editingDescription, setEditingDescription] = useState(task.description || "")
+    const [editingDueDate, setEditingDueDate] = useState(task.dueDate || "")
 
     const handleSave = async () => {
-        await onUpdate(task.id, editingTitle, editingDescription)
+        await onUpdate(task.id, editingTitle, editingDescription, editingDueDate)
         onClose()
     }
 
@@ -38,6 +39,13 @@ function TaskModal({ task, onClose, onUpdate, onDelete }) {
                     onChange={(e) => setEditingDescription(e.target.value)}
                     placeholder="Add a description..."
                     rows={4}
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                <input
+                    type="date"
+                    value={editingDueDate}
+                    onChange={(e) => setEditingDueDate(e.target.value)}
                     className="w-full border border-gray-300 rounded px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
 
