@@ -6,7 +6,17 @@ function Task({ task, onToggle, onDelete, onUpdate }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     return (
-        <div className="bg-white rounded p-2 flex justify-between items-center shadow-sm">
+        <div className="bg-white rounded p-2 flex items-center gap-2 shadow-sm">
+            <button
+                onClick={() => onToggle(task)}
+                className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition ${
+                    task.completed
+                        ? "bg-blue-500 border-blue-500"
+                        : "border-gray-300 hover:border-blue-400"
+                }`}
+            >
+                {task.completed && <span className="text-white text-xs">✓</span>}
+            </button>
             <div className="flex flex-col flex-1">
                 <span
                     onClick={() => setIsModalOpen(true)}
@@ -25,12 +35,6 @@ function Task({ task, onToggle, onDelete, onUpdate }) {
                     </span>
                 )}
             </div>
-            <button
-                onClick={() => onToggle(task)}
-                className="text-gray-400 hover:text-blue-500 text-xs transition ml-2"
-            >
-                ✓
-            </button>
             {isModalOpen && (
                 <TaskModal
                     task={task}

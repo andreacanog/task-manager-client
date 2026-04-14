@@ -2,6 +2,7 @@ import { useQuery, useMutation, gql } from "@apollo/client";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Spinner from "../components/Spinner";
+import { Pencil, Trash2 } from "lucide-react";
 
 const GET_BOARDS = gql`
   query {
@@ -158,29 +159,28 @@ function Dashboard() {
               onClick={() => navigate(`/board/${board.id}`)}
               className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg p-5 cursor-pointer transition shadow"
             >
-              {editingBoardId === board.id ? (
-                <input
-                  value={editingTitle}
-                  onChange={(e) => setEditingTitle(e.target.value)}
-                  onBlur={(e) => handleUpdateBoard(e, board.id)}
-                  onKeyDown={(e) => e.key === "Enter" && handleUpdateBoard(e, board.id)}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              ) : (
-                <h3 className="font-semibold text-lg">{board.title}</h3>
-              )}
-              <button
-                  onClick={(e) => handleDeleteBoard(e, board.id)}
-                  className="text-gray-400 hover:text-red-500 ml-2 text-xs transition"
-              >
-                  ✕
-              </button>
-              <button
-                  onClick={(e) => handleEditClick(e, board)}
-                  className="text-gray-400 hover:text-red-500 ml-2 text-xs transition"
-              >
-                  ✏️
-              </button>
+              <div className="flex justify-between items-center">
+                {editingBoardId === board.id ? (
+                  <input
+                    value={editingTitle}
+                    onChange={(e) => setEditingTitle(e.target.value)}
+                    onBlur={(e) => handleUpdateBoard(e, board.id)}
+                    onKeyDown={(e) => e.key === "Enter" && handleUpdateBoard(e, board.id)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="bg-transparent border-b border-white text-white w-full focus:outline-none"
+                  />
+                ) : (
+                  <h3 className="font-semibold text-lg">{board.title}</h3>
+                )}
+                <div className="flex gap-1 ml-2">
+                  <button onClick={(e) => handleEditClick(e, board)} className="text-white/70 hover:text-white transition">
+                    <Pencil size={14} />
+                  </button>
+                  <button onClick={(e) => handleDeleteBoard(e, board.id)} className="text-white/70 hover:text-red-300 transition">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
             </div>
           ))}
         </div>
