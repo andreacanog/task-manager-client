@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@apollo/client": "^3.11.8",
+    "@hello-pangea/dnd": "^18.0.1",
     "@tailwindcss/vite": "^4.2.2",
     "graphql": "^16.8.1",
     "lucide-react": "^1.8.0",

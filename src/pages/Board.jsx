@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import List from "../components/List";
 import Spinner from "../components/Spinner";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 const GET_BOARD = gql`
     query GetBoard($id: ID!) {
@@ -38,6 +39,20 @@ const CREATE_LIST = gql`
     }
 `;
 
+const REORDER_LISTS = gql`
+    mutation ReorderLIsts($boardId: ID!, $listIds: [ID!]!){
+        reorderLists(input: { boardId: $boardId, listIds: $listIds }) {
+            lists {
+                id
+                title
+                position
+            }
+            errors
+        }
+    }
+
+`
+
 function Board() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -50,12 +65,64 @@ function Board() {
     const [createList] = useMutation(CREATE_LIST, {
         refetchQueries: [{ query: GET_BOARD, variables: { id } }],
     });
+
+    const [reorderLists] = useMutation(REORDER_LISTS);
     
     const handleCreateList = async (e) => {
         e.preventDefault();
         if (!newListTitle.trim()) return;
         await createList({ variables: { title: newListTitle, boardId: id } });
         setNewListTitle("");
+    };
+
+    const onDragEnd = (result) => {
+        const { destination, source, type } = result;
+
+        // If dropped outside a droppable area, do nothing
+        if (!destination) return;
+
+        // If dropped in the same position, do nothing
+        if (destination.droppableId === source.droppableId && destination.index === source.index) return;
+
+        if (type === "LIST") {
+            const newListIds = [...data.board.lists]
+                .map((list) => list.id);
+            
+            newListIds.splice(source.index, 1);
+            newListIds.splice(destination.index, 0, result.draggableId);
+
+            const reorderedLists = [...data.board.lists];
+            reorderedLists.splice(source.index, 1);
+            reorderedLists.splice(destination.index, 0, data.board.lists[source.index]);
+
+            reorderLists({
+                variables: { boardId: id, listIds: newListIds },
+                optimisticResponse: {
+                    reorderLists: {
+                        __typename: "ReorderListsPayload",
+                        lists: reorderedLists.map((list, index) => ({
+                            ...list,
+                            position: index,
+                            __typename: "List",
+                        })),
+                        errors: [],
+                    },
+                },
+                update(cache, { data: { reorderLists } }) {
+                    const existing = cache.readQuery({ query: GET_BOARD, variables: { id } });
+                    cache.writeQuery({
+                        query: GET_BOARD,
+                        variables: { id },
+                        data: {
+                            board: {
+                                ...existing.board,
+                                lists: reorderLists.lists,
+                            },
+                        },
+                    });
+                },
+            });
+        }
     };
 
     if (loading) return <Spinner/>
@@ -88,36 +155,56 @@ function Board() {
 
             {/* Board content */}
             <div className="p-6 overflow-x-auto">
-                <div className="flex gap-4 items-start">
-                    {data.board.lists.map((list) => (
-                            <List
-                                key={list.id}
-                                list={list}
-                                refetchBoard={[{ query: GET_BOARD, variables: { id } }]}
-                            />
-                    ))}
-
-                    {/* Add list form */}
-                    <div className="bg-gray-200 rounded-lg p-3 w-64 flex-shrink-0">
-                        <h3 className="font-semibold text-gray-700 mb-3">Add a list</h3>
-                        <form onSubmit={handleCreateList}>
-                            <input
-                                type="text"
-                                placeholder="List title..."
-                                value={newListTitle}
-                                onChange={(e) => setNewListTitle(e.target.value)}
-                                className="w-full border border-gray-300 rounded px-2 py-1 text-sm mb-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                            />
-                            <button
-                                type="submit"
-                                className="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm py-1 rounded transition"
+                <DragDropContext onDragEnd={onDragEnd}>
+                    <Droppable droppableId="all-lists" direction="horizontal" type="LIST">
+                        {(provided) => (
+                            <div
+                                className="flex gap-4 items-start"
+                                {...provided.droppableProps}
+                                ref={provided.innerRef}
                             >
-                                + Add List
-                            </button>
-                        </form>
-                    </div>
-                </div>
-        </div>
+                                {data.board.lists.map((list, index) => (
+                                    <Draggable key={list.id} draggableId={list.id} index={index}>
+                                        {(provided) => (
+                                            <div
+                                                ref={provided.innerRef}
+                                                {...provided.draggableProps}
+                                                {...provided.dragHandleProps}
+                                            >
+                                                <List
+                                                    list={list}
+                                                    refetchBoard={[{ query: GET_BOARD, variables: { id } }]}
+                                                />
+                                            </div>
+                                        )}
+                                    </Draggable>
+                                ))}
+                                {provided.placeholder}
+
+                                {/* Add list form */}
+                                <div className="bg-gray-200 rounded-lg p-3 w-64 flex-shrink-0">
+                                    <h3 className="font-semibold text-gray-700 mb-3">Add a list</h3>
+                                    <form onSubmit={handleCreateList}>
+                                        <input
+                                            type="text"
+                                            placeholder="List title..."
+                                            value={newListTitle}
+                                            onChange={(e) => setNewListTitle(e.target.value)}
+                                            className="w-full border border-gray-300 rounded px-2 py-1 text-sm mb-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                        />
+                                        <button
+                                            type="submit"
+                                            className="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm py-1 rounded transition"
+                                        >
+                                            + Add List
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        )}
+                    </Droppable>
+                </DragDropContext>
+            </div>
         </div>
     );
 }
