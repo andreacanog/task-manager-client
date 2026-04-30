@@ -20,6 +20,7 @@ const GET_BOARD = gql`
                     description
                     completed
                     dueDate
+                    position
                 }
             }
         }
@@ -50,8 +51,24 @@ const REORDER_LISTS = gql`
             errors
         }
     }
+`;
 
-`
+const REORDER_TASKS = gql`
+    mutation ReorderTasks($listId: ID!, $taskIds: [ID!]!){
+        reorderTasks(input: { listId: $listId, taskIds: $taskIds }) {
+            tasks {
+                id
+                title
+                description
+                completed
+                dueDate
+                position
+            }
+            errors
+        }
+    }
+
+`;
 
 function Board() {
     const { id } = useParams();
@@ -67,6 +84,7 @@ function Board() {
     });
 
     const [reorderLists] = useMutation(REORDER_LISTS);
+    const [reorderTasks] = useMutation(REORDER_TASKS);
     
     const handleCreateList = async (e) => {
         e.preventDefault();
@@ -123,6 +141,50 @@ function Board() {
                 },
             });
         }
+
+        if (type === "TASK") {
+            const sourceList = data.board.lists.find(list => list.id === source.droppableId);
+            const destinationList = data.board.lists.find(list => list.id === destination.droppableId);
+
+            const newTaskIds = destinationList.tasks.map(task => task.id);
+
+            if (source.droppableId === destination.droppableId) {
+                newTaskIds.splice(source.index, 1);
+                newTaskIds.splice(destination.index, 0, result.draggableId);
+            } else {
+                newTaskIds.splice(destination.index, 0, result.draggableId);
+            }
+
+            console.log("reordering tasks", {
+            listId: destination.droppableId,
+            taskIds: newTaskIds
+            });
+
+            reorderTasks({
+                variables: { listId: destination.droppableId, taskIds: newTaskIds },
+                update(cache, { data: { reorderTasks } }) {
+                    const existing = cache.readQuery({ query: GET_BOARD, variables: { id } });
+                    cache.writeQuery({
+                        query: GET_BOARD,
+                        variables: { id },
+                        data: {
+                            board: {
+                                ...existing.board,
+                                lists: existing.board.lists.map(list => {
+                                    if (list.id === destination.droppableId) {
+                                        return { ...list, tasks: reorderTasks.tasks };
+                                    }
+                                    if (list.id === source.droppableId) {
+                                        return { ...list, tasks: list.tasks.filter(task => task.id !== result.draggableId) };
+                                    }
+                                    return list;
+                                }),
+                            },
+                        },
+                    });
+                },
+            });
+        }
     };
 
     if (loading) return <Spinner/>
@@ -169,11 +231,11 @@ function Board() {
                                             <div
                                                 ref={provided.innerRef}
                                                 {...provided.draggableProps}
-                                                {...provided.dragHandleProps}
                                             >
                                                 <List
                                                     list={list}
                                                     refetchBoard={[{ query: GET_BOARD, variables: { id } }]}
+                                                    dragHandleProps={provided.dragHandleProps}
                                                 />
                                             </div>
                                         )}

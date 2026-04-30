@@ -40,13 +40,25 @@ const errorLink = onError(({ graphQLErrors }) => {
 
 const client = new ApolloClient({
   link: errorLink.concat(authLink).concat(httpLink),
-  cache: new InMemoryCache(),
+  cache: new InMemoryCache({
+    typePolicies: {
+        List: {
+            fields: {
+                tasks: {
+                    merge(existing, incoming) {
+                        return incoming;
+                    }
+                }
+            }
+        }
+    }
+  }),
 });
 
 createRoot(document.getElementById("root")).render(
-  <StrictMode>
+  // <StrictMode>
     <ApolloProvider client={client}>
       <App />
     </ApolloProvider>
-  </StrictMode>
+  // </StrictMode> 
 );

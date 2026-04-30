@@ -2,6 +2,7 @@ import { useMutation, gql } from "@apollo/client";
 import { useState } from "react";
 import Task from "./Task";
 import { Pencil, Trash2 } from "lucide-react";
+import { Droppable, Draggable } from "@hello-pangea/dnd";
 
 const CREATE_TASK = gql`
     mutation CreateTask($title: String!, $listId: ID!) {
@@ -63,7 +64,7 @@ const DELETE_LIST = gql`
 
 
 
-function List({ list, refetchBoard }) {
+function List({ list, refetchBoard, dragHandleProps}) {
     const [newTaskTitle, setNewTaskTitle] = useState("");
     const [isEditing, setIsEditing] = useState(false);
     const [editingTitle, setEditingTitle] = useState("");
@@ -126,51 +127,74 @@ function List({ list, refetchBoard }) {
         if (!confirmed) return
         await deleteList({ variables: { id: listId } })
     }
+    console.log("dragHandleProps", dragHandleProps)
 
     return (
         <div className="bg-gray-200 rounded-lg p-3 w-64 flex-shrink-0">
             {/* List header */}
             <div className="flex items-center justify-between mb-3">
-                {isEditing ? (
-                    <input
-                        value={editingTitle}
-                        onChange={(e) => setEditingTitle(e.target.value)}
-                        onBlur={handleUpdateList}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                                e.preventDefault()
-                                handleUpdateList(e)
-                            }
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                        className="font-semibold text-gray-700 rounded px-1 w-full"
-                        autoFocus
-                    />
-                ) : (
-                    <h3 className="font-semibold text-gray-700">{list.title}</h3>
-                )}
-                <div className="flex gap-1 ml-2">
-                    <button onClick={(e) => handleEditClick(e)} className="text-gray-400 hover:text-blue-500 transition">
-                        <Pencil size={14} />
-                    </button>
-                    <button onClick={() => handleDeleteList(list.id)} className="text-gray-400 hover:text-red-500 transition">
-                        <Trash2 size={14} />
-                    </button>
+                <div className="flex items-center gap-1 flex-1 min-w-0">
+                    <span {...dragHandleProps} className="cursor-grab text-gray-400 hover:text-gray-600">⠿</span>
+                    {isEditing ? (
+                        <input
+                            value={editingTitle}
+                            onChange={(e) => setEditingTitle(e.target.value)}
+                            onBlur={handleUpdateList}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault()
+                                    handleUpdateList(e)
+                                }
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="font-semibold text-gray-700 rounded px-1 w-full"
+                            autoFocus
+                        />
+                    ) : (
+                        <h3 className="font-semibold text-gray-700">{list.title}</h3>
+                    )}
+                    <div className="flex gap-1 ml-2">
+                        <button onClick={(e) => handleEditClick(e)} className="text-gray-400 hover:text-blue-500 transition">
+                            <Pencil size={14} />
+                        </button>
+                        <button onClick={() => handleDeleteList(list.id)} className="text-gray-400 hover:text-red-500 transition">
+                            <Trash2 size={14} />
+                        </button>
+                    </div>
                 </div>
             </div>
 
             {/* Tasks */}
-            <div className="space-y-2 mb-3">
-                {list.tasks.map((task) => (
-                    <Task
-                        key={task.id}
-                        task={task}
-                        onToggle={handleToggleTask}
-                        onDelete={handleDeleteTask}
-                        onUpdate={handleUpdateTask}
-                    />
-                ))}
-            </div>
+            <Droppable droppableId={list.id} type="TASK">
+                {(provided) => (
+                    <div 
+                        className="space-y-2 mb-3"
+                        {...provided.droppableProps}  
+                        ref={provided.innerRef}
+                    >
+                        {list.tasks.map((task, index) => (
+                            <Draggable key={task.id} draggableId={task.id} index={index}>
+                                {(provided) => 
+                                    <div
+                                        ref={provided.innerRef}
+                                        {...provided.draggableProps}
+                                        {...provided.dragHandleProps}
+                                    > 
+                                        <Task
+                                            key={task.id}
+                                            task={task}
+                                            onToggle={handleToggleTask}
+                                            onDelete={handleDeleteTask}
+                                            onUpdate={handleUpdateTask}
+                                        />
+                                    </div>
+                                }
+                            </Draggable>
+                        ))}
+                        {provided.placeholder}
+                    </div>
+                )}
+            </Droppable>
 
             {/* Add task form */}
             <form onSubmit={handleCreateTask}>
@@ -190,7 +214,6 @@ function List({ list, refetchBoard }) {
             </form>
         </div>
     );
-
 }
 
 export default List;
