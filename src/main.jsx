@@ -50,8 +50,17 @@ const client = new ApolloClient({
                     }
                 }
             }
+          },
+        Task: {
+          fields: {
+            dueDate: {
+              merge(existings, incoming) {
+                return incoming
+              }
+            }
+          }
         }
-    }
+      }
   }),
 });
 
@@ -60,5 +69,5 @@ createRoot(document.getElementById("root")).render(
     <ApolloProvider client={client}>
       <App />
     </ApolloProvider>
-  // </StrictMode> 
+  //* </StrictMode> 
 );

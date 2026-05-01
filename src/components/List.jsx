@@ -62,32 +62,16 @@ const DELETE_LIST = gql`
     }
 `;
 
-
-
-function List({ list, refetchBoard, dragHandleProps}) {
+function List({ list, refetchBoard, dragHandleProps }) {
     const [newTaskTitle, setNewTaskTitle] = useState("");
     const [isEditing, setIsEditing] = useState(false);
     const [editingTitle, setEditingTitle] = useState("");
 
-    const [createTask] = useMutation(CREATE_TASK, {
-        refetchQueries: refetchBoard,
-    });
-    
-    const [updateTask] = useMutation(UPDATE_TASK, {
-        refetchQueries: refetchBoard,
-    });
-
-    const [updateList] = useMutation(UPDATE_LIST, {
-        refetchQueries: refetchBoard,
-    });
-
-    const [deleteTask] = useMutation(DELETE_TASK, {
-        refetchQueries: refetchBoard,
-    });
-
-    const [deleteList] = useMutation(DELETE_LIST, {
-        refetchQueries: refetchBoard,
-    });
+    const [createTask] = useMutation(CREATE_TASK, { refetchQueries: refetchBoard });
+    const [updateTask] = useMutation(UPDATE_TASK, { refetchQueries: refetchBoard });
+    const [updateList] = useMutation(UPDATE_LIST, { refetchQueries: refetchBoard });
+    const [deleteTask] = useMutation(DELETE_TASK, { refetchQueries: refetchBoard });
+    const [deleteList] = useMutation(DELETE_LIST, { refetchQueries: refetchBoard });
 
     const handleCreateTask = async (e) => {
         e.preventDefault();
@@ -96,45 +80,44 @@ function List({ list, refetchBoard, dragHandleProps}) {
         setNewTaskTitle("");
     };
 
-    const handleEditClick = async (e) => {
-        e.stopPropagation()
-        setIsEditing(true)
-        setEditingTitle(list.title)
-    }
+    const handleEditClick = (e) => {
+        e.stopPropagation();
+        setIsEditing(true);
+        setEditingTitle(list.title);
+    };
 
-    const handleUpdateList = async (e) => {
-        await updateList({ variables: { id: list.id, title: editingTitle}})
-        setIsEditing(false)
-        setEditingTitle("")
-    }
+    const handleUpdateList = async () => {
+        await updateList({ variables: { id: list.id, title: editingTitle } });
+        setIsEditing(false);
+        setEditingTitle("");
+    };
 
     const handleUpdateTask = async (taskId, newTaskTitle, newDescription, newDueDate) => {
-        await updateTask({ variables: { id: taskId, title: newTaskTitle, description: newDescription, dueDate: newDueDate}})
-    }
+        await updateTask({ variables: { id: taskId, title: newTaskTitle, description: newDescription, dueDate: newDueDate } });
+    };
 
     const handleToggleTask = async (task) => {
         await updateTask({ variables: { id: task.id, completed: !task.completed } });
     };
 
     const handleDeleteTask = async (taskId) => {
-        const confirmed = window.confirm("Are you sure you want to delete this task?")
-        if (!confirmed) return
+        const confirmed = window.confirm("Are you sure you want to delete this task?");
+        if (!confirmed) return;
         await deleteTask({ variables: { id: taskId } });
     };
 
     const handleDeleteList = async (listId) => {
-        const confirmed = window.confirm("Are you sure you want to delete this list?")
-        if (!confirmed) return
-        await deleteList({ variables: { id: listId } })
-    }
-    console.log("dragHandleProps", dragHandleProps)
+        const confirmed = window.confirm("Are you sure you want to delete this list?");
+        if (!confirmed) return;
+        await deleteList({ variables: { id: listId } });
+    };
 
     return (
         <div className="bg-gray-200 rounded-lg p-3 w-64 flex-shrink-0">
             {/* List header */}
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-1 flex-1 min-w-0">
-                    <span {...dragHandleProps} className="cursor-grab text-gray-400 hover:text-gray-600">⠿</span>
+                    <span {...dragHandleProps} className="cursor-grab text-gray-400 hover:text-gray-600 px-1">⠿</span>
                     {isEditing ? (
                         <input
                             value={editingTitle}
@@ -142,8 +125,8 @@ function List({ list, refetchBoard, dragHandleProps}) {
                             onBlur={handleUpdateList}
                             onKeyDown={(e) => {
                                 if (e.key === "Enter") {
-                                    e.preventDefault()
-                                    handleUpdateList(e)
+                                    e.preventDefault();
+                                    handleUpdateList();
                                 }
                             }}
                             onClick={(e) => e.stopPropagation()}
@@ -153,42 +136,41 @@ function List({ list, refetchBoard, dragHandleProps}) {
                     ) : (
                         <h3 className="font-semibold text-gray-700">{list.title}</h3>
                     )}
-                    <div className="flex gap-1 ml-2">
-                        <button onClick={(e) => handleEditClick(e)} className="text-gray-400 hover:text-blue-500 transition">
-                            <Pencil size={14} />
-                        </button>
-                        <button onClick={() => handleDeleteList(list.id)} className="text-gray-400 hover:text-red-500 transition">
-                            <Trash2 size={14} />
-                        </button>
-                    </div>
+                </div>
+                <div className="flex gap-1 ml-2">
+                    <button onClick={handleEditClick} className="text-gray-400 hover:text-blue-500 transition">
+                        <Pencil size={14} />
+                    </button>
+                    <button onClick={() => handleDeleteList(list.id)} className="text-gray-400 hover:text-red-500 transition">
+                        <Trash2 size={14} />
+                    </button>
                 </div>
             </div>
 
             {/* Tasks */}
-            <Droppable droppableId={list.id} type="TASK">
+            <Droppable droppableId={`list-${list.id}`} type="TASK">
                 {(provided) => (
-                    <div 
+                    <div
                         className="space-y-2 mb-3"
-                        {...provided.droppableProps}  
+                        {...provided.droppableProps}
                         ref={provided.innerRef}
                     >
                         {list.tasks.map((task, index) => (
-                            <Draggable key={task.id} draggableId={task.id} index={index}>
-                                {(provided) => 
+                            <Draggable key={task.id} draggableId={`task-${task.id}`} index={index}>
+                                {(provided) => (
                                     <div
                                         ref={provided.innerRef}
                                         {...provided.draggableProps}
                                         {...provided.dragHandleProps}
-                                    > 
+                                    >
                                         <Task
-                                            key={task.id}
                                             task={task}
                                             onToggle={handleToggleTask}
                                             onDelete={handleDeleteTask}
                                             onUpdate={handleUpdateTask}
                                         />
                                     </div>
-                                }
+                                )}
                             </Draggable>
                         ))}
                         {provided.placeholder}

@@ -41,12 +41,20 @@ const CREATE_LIST = gql`
 `;
 
 const REORDER_LISTS = gql`
-    mutation ReorderLIsts($boardId: ID!, $listIds: [ID!]!){
+    mutation ReorderLists($boardId: ID!, $listIds: [ID!]!) {
         reorderLists(input: { boardId: $boardId, listIds: $listIds }) {
             lists {
                 id
                 title
                 position
+                tasks {
+                    id
+                    title
+                    description
+                    completed
+                    dueDate
+                    position
+                }
             }
             errors
         }
@@ -54,7 +62,7 @@ const REORDER_LISTS = gql`
 `;
 
 const REORDER_TASKS = gql`
-    mutation ReorderTasks($listId: ID!, $taskIds: [ID!]!){
+    mutation ReorderTasks($listId: ID!, $taskIds: [ID!]!) {
         reorderTasks(input: { listId: $listId, taskIds: $taskIds }) {
             tasks {
                 id
@@ -67,7 +75,6 @@ const REORDER_TASKS = gql`
             errors
         }
     }
-
 `;
 
 function Board() {
@@ -85,7 +92,7 @@ function Board() {
 
     const [reorderLists] = useMutation(REORDER_LISTS);
     const [reorderTasks] = useMutation(REORDER_TASKS);
-    
+
     const handleCreateList = async (e) => {
         e.preventDefault();
         if (!newListTitle.trim()) return;
@@ -96,98 +103,122 @@ function Board() {
     const onDragEnd = (result) => {
         const { destination, source, type } = result;
 
-        // If dropped outside a droppable area, do nothing
         if (!destination) return;
-
-        // If dropped in the same position, do nothing
         if (destination.droppableId === source.droppableId && destination.index === source.index) return;
 
         if (type === "LIST") {
-            const newListIds = [...data.board.lists]
-                .map((list) => list.id);
-            
+            const newListIds = data.board.lists.map((list) => list.id);
             newListIds.splice(source.index, 1);
-            newListIds.splice(destination.index, 0, result.draggableId);
+            newListIds.splice(destination.index, 0, result.draggableId.replace("list-", ""));
 
             const reorderedLists = [...data.board.lists];
             reorderedLists.splice(source.index, 1);
             reorderedLists.splice(destination.index, 0, data.board.lists[source.index]);
 
-            reorderLists({
-                variables: { boardId: id, listIds: newListIds },
-                optimisticResponse: {
-                    reorderLists: {
-                        __typename: "ReorderListsPayload",
-                        lists: reorderedLists.map((list, index) => ({
-                            ...list,
-                            position: index,
-                            __typename: "List",
-                        })),
-                        errors: [],
-                    },
-                },
-                update(cache, { data: { reorderLists } }) {
-                    const existing = cache.readQuery({ query: GET_BOARD, variables: { id } });
-                    cache.writeQuery({
-                        query: GET_BOARD,
-                        variables: { id },
-                        data: {
-                            board: {
-                                ...existing.board,
-                                lists: reorderLists.lists,
-                            },
+            setTimeout(() => {
+                reorderLists({
+                    variables: { boardId: id, listIds: newListIds },
+                    optimisticResponse: {
+                        reorderLists: {
+                            __typename: "ReorderListsPayload",
+                            lists: reorderedLists.map((list, index) => ({
+                                ...list,
+                                position: index,
+                                __typename: "List",
+                                tasks: list.tasks.map(task => ({
+                                    ...task,
+                                    __typename: "Task"
+                                }))
+                            })),
+                            errors: [],
                         },
-                    });
-                },
-            });
+                    },
+                    update(cache, { data: { reorderLists } }) {
+                        const existing = cache.readQuery({ query: GET_BOARD, variables: { id } });
+                        cache.writeQuery({
+                            query: GET_BOARD,
+                            variables: { id },
+                            data: {
+                                board: {
+                                    ...existing.board,
+                                    lists: reorderLists.lists,
+                                },
+                            },
+                        });
+                    },
+                });
+            }, 0);
         }
 
         if (type === "TASK") {
-            const sourceList = data.board.lists.find(list => list.id === source.droppableId);
-            const destinationList = data.board.lists.find(list => list.id === destination.droppableId);
+            const sourceListId = source.droppableId.replace("list-", "");
+            const destinationListId = destination.droppableId.replace("list-", "");
+            const taskId = result.draggableId.replace("task-", "");
+
+            const sourceList = data.board.lists.find(list => list.id === sourceListId);
+            const destinationList = data.board.lists.find(list => list.id === destinationListId);
 
             const newTaskIds = destinationList.tasks.map(task => task.id);
+            const reorderedTasks = [...destinationList.tasks];
 
-            if (source.droppableId === destination.droppableId) {
+            if (sourceListId === destinationListId) {
+                reorderedTasks.splice(source.index, 1);
+                reorderedTasks.splice(destination.index, 0, destinationList.tasks[source.index]);
                 newTaskIds.splice(source.index, 1);
-                newTaskIds.splice(destination.index, 0, result.draggableId);
+                newTaskIds.splice(destination.index, 0, taskId);
             } else {
-                newTaskIds.splice(destination.index, 0, result.draggableId);
+                const draggedTask = sourceList.tasks[source.index];
+                reorderedTasks.splice(destination.index, 0, draggedTask);
+                newTaskIds.splice(destination.index, 0, taskId);
             }
 
-            console.log("reordering tasks", {
-            listId: destination.droppableId,
-            taskIds: newTaskIds
-            });
-
-            reorderTasks({
-                variables: { listId: destination.droppableId, taskIds: newTaskIds },
-                update(cache, { data: { reorderTasks } }) {
-                    const existing = cache.readQuery({ query: GET_BOARD, variables: { id } });
-                    cache.writeQuery({
-                        query: GET_BOARD,
-                        variables: { id },
-                        data: {
-                            board: {
-                                ...existing.board,
-                                lists: existing.board.lists.map(list => {
-                                    if (list.id === destination.droppableId) {
-                                        return { ...list, tasks: reorderTasks.tasks };
-                                    }
-                                    if (list.id === source.droppableId) {
-                                        return { ...list, tasks: list.tasks.filter(task => task.id !== result.draggableId) };
-                                    }
-                                    return list;
-                                }),
-                            },
+            setTimeout(() => {
+                reorderTasks({
+                    variables: { listId: destinationListId, taskIds: newTaskIds },
+                    optimisticResponse: {
+                        reorderTasks: {
+                            __typename: "ReorderTasksPayload",
+                            tasks: reorderedTasks.map((task, index) => ({
+                                ...task,
+                                position: index,
+                                __typename: "Task",
+                                id: task.id,
+                                title: task.title,
+                                description: task.description || null,
+                                completed: task.completed || false,
+                                dueDate: task.dueDate || null,
+                                position: index,
+                            })),
+                            errors: [],
                         },
-                    });
-                },
-            });
+                    },
+                    update(cache, { data: { reorderTasks } }) {
+                        const existing = cache.readQuery({ query: GET_BOARD, variables: { id } });
+                        cache.writeQuery({
+                            query: GET_BOARD,
+                            variables: { id },
+                            data: {
+                                board: {
+                                    ...existing.board,
+                                    lists: existing.board.lists.map(list => {
+                                        if (list.id === destinationListId) {
+                                            return { ...list, tasks: reorderTasks.tasks };
+                                        }
+                                        if (list.id === sourceListId) {
+                                            return { ...list, tasks: list.tasks.filter(task => String(task.id) !== String(taskId)) };
+                                        }
+                                        return list;
+                                    }),
+                                },
+                            },
+                        });
+                    },
+                });
+            }, 0);
         }
     };
 
-    if (loading) return <Spinner/>
+    if (loading) return <Spinner />;
 
     if (error) return (
         <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -197,12 +228,8 @@ function Board() {
 
     return (
         <div className="min-h-screen bg-gray-100">
-            {/* Navbar */}
             <nav className="bg-blue-600 px-6 py-4 flex items-center gap-4 shadow">
-                <button
-                    onClick={() => navigate("/dashboard")}
-                    className="text-white text-sm hover:underline"
-                >
+                <button onClick={() => navigate("/dashboard")} className="text-white text-sm hover:underline">
                     ← Back
                 </button>
                 <h1 className="text-white text-xl font-bold">{data.board.title}</h1>
@@ -215,7 +242,6 @@ function Board() {
                 </div>
             )}
 
-            {/* Board content */}
             <div className="p-6 overflow-x-auto">
                 <DragDropContext onDragEnd={onDragEnd}>
                     <Droppable droppableId="all-lists" direction="horizontal" type="LIST">
@@ -226,7 +252,7 @@ function Board() {
                                 ref={provided.innerRef}
                             >
                                 {data.board.lists.map((list, index) => (
-                                    <Draggable key={list.id} draggableId={list.id} index={index}>
+                                    <Draggable key={list.id} draggableId={`list-${list.id}`} index={index}>
                                         {(provided) => (
                                             <div
                                                 ref={provided.innerRef}
@@ -243,7 +269,6 @@ function Board() {
                                 ))}
                                 {provided.placeholder}
 
-                                {/* Add list form */}
                                 <div className="bg-gray-200 rounded-lg p-3 w-64 flex-shrink-0">
                                     <h3 className="font-semibold text-gray-700 mb-3">Add a list</h3>
                                     <form onSubmit={handleCreateList}>
