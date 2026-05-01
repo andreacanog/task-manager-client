@@ -65,9 +65,9 @@ const client = new ApolloClient({
 });
 
 createRoot(document.getElementById("root")).render(
-  // <StrictMode>
+  <StrictMode>
     <ApolloProvider client={client}>
       <App />
     </ApolloProvider>
-  //* </StrictMode> 
+  </StrictMode> 
 );
