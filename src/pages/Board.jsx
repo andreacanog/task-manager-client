@@ -269,7 +269,7 @@ function Board() {
                                 ))}
                                 {provided.placeholder}
 
-                                <div className="bg-gray-200 rounded-lg p-3 w-64 flex-shrink-0">
+                                <div className="bg-gray-200 rounded-xl p-3 w-64 flex-shrink-0">
                                     <h3 className="font-semibold text-gray-700 mb-3">Add a list</h3>
                                     <form onSubmit={handleCreateList}>
                                         <input
