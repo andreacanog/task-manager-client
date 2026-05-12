@@ -113,7 +113,7 @@ function List({ list, refetchBoard, dragHandleProps }) {
     };
 
     return (
-        <div className="bg-gray-200 rounded-lg p-3 w-64 flex-shrink-0">
+        <div className="bg-white rounded-xl p-3 w-64 flex-shrink-0 shadow-md">
             {/* List header */}
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-1 flex-1 min-w-0">
