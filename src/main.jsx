@@ -12,7 +12,7 @@ import App from "./App.jsx";
 import "./index.css";
 
 const httpLink = createHttpLink({
-  uri: "http://localhost:3000/graphql",
+  uri: `${import.meta.env.VITE_API_URL}/graphql`,
 });
 
 const authLink = new ApolloLink((operation, forward) => {
