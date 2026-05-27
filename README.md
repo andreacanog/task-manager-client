@@ -1,16 +1,38 @@
-# React + Vite
+# TaskManager Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A Trello-style project management app built with React and Apollo Client. Live demo: [task-manager-client-5dxs.onrender.com](https://task-manager-client-5dxs.onrender.com)
 
-Currently, two official plugins are available:
+## What it does
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+TaskManager lets users organize work across boards, lists, and tasks — similar to Trello. Each user has their own private workspace with full CRUD on boards, lists, and tasks.
 
-## React Compiler
+**Features:**
+- JWT authentication (sign up, sign in, protected routes)
+- Create, rename, and delete boards, lists, and tasks
+- Drag and drop to reorder lists and tasks (with backend persistence)
+- Task modal with description and due date
+- Optimistic UI updates via Apollo cache
+- Auto-redirect to login on token expiration or auth errors
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Tech Stack
 
-## Expanding the ESLint configuration
+| Layer | Technology |
+|---|---|
+| Framework | React 19 (Vite) |
+| Data fetching | Apollo Client |
+| Routing | React Router v7 |
+| Styling | Tailwind CSS v4 |
+| Drag and drop | @hello-pangea/dnd |
+| Icons | Lucide React |
+| Auth | JWT (stored in localStorage) |
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Architecture highlights
+
+- **Apollo cache management** — mutations use `refetchQueries` and `optimisticResponse` to keep the UI in sync without full page reloads
+- **Component hierarchy** — `Board → List → Task` with co-located mutation logic (task mutations in `List.jsx`, board mutations in `Dashboard.jsx`)
+- **Protected routes** — `ProtectedRoute` validates JWT expiration client-side before rendering; Apollo's `onError` link handles server-side auth failures
+- **Cache clearing on logout** — `client.clearStore()` prevents data leaking between user sessions
+
+## Backend
+
+The API is a separate Rails + GraphQL service. See [task-manager](https://github.com/your-username/task-manager) for the backend repo.
