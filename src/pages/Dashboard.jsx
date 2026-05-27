@@ -1,4 +1,4 @@
-import { useQuery, useMutation, gql } from "@apollo/client";
+import { useQuery, useMutation, gql, useApolloClient } from "@apollo/client";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Spinner from "../components/Spinner";
@@ -52,6 +52,7 @@ function Dashboard() {
   const [editingBoardId, setEditingBoardId] = useState(null)
   const [editingTitle, setEditingTitle] = useState("")
   const { data, loading, error } = useQuery(GET_BOARDS);
+  const client = useApolloClient();
 
   const [createBoard] = useMutation(CREATE_BOARD, {
     refetchQueries: [{ query: GET_BOARDS }],
@@ -97,8 +98,9 @@ function Dashboard() {
     await deleteBoard({ variables: { id: boardId } })
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     localStorage.removeItem("token");
+    await client.clearStore(); // clears cache, doesn't refetch
     navigate("/login");
   };
 
